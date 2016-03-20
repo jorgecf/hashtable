@@ -1,15 +1,15 @@
 /**
  * @file hashtable.c
- * @author Jorge Cifuentes <jorge.cifuentes95@gmail.com>
- * @date 18 mar 2016
+ * @author     Jorge Cifuentes <jorge.cifuentes95@gmail.com>
+ * @date       20 mar 2016
  *
- * @brief File containing hashtable library functions implementation.
- *
+ * @brief      File containing hashtable library functions implementation.
  */
 
 #include "../includes/hashtable.h"
 
-// staticos
+
+/* Private functions */
 
 /**
  * @brief      Creates a new node, consisting of a key-value pair.
@@ -22,14 +22,15 @@
 static ht_entry *ht_newnode(char *key, ht_value *value);
 
 /**
- * @brief      Una funcion hash para strings.
+ * @brief      A hash functions for strings.
  *
- * @param      h     Tabla hash
- * @param      key   Clave que hashear
+ * @param      h     Hash table.
+ * @param      key   Key.
  *
  * @return     El valor hash o -1 en caso de error
  */
 static uint16_t hash(hashtable *h, char *key);
+
 
 
 hashtable *ht_create(int8_t size) {
@@ -54,7 +55,7 @@ hashtable *ht_create(int8_t size) {
     return t;
 }
 
-void clearHashTable(hashtable* h) {
+void ht_clear (hashtable *h) {
 
     if (!h) return;
 
@@ -62,7 +63,6 @@ void clearHashTable(hashtable* h) {
     ht_entry *node = NULL;
 
     for (i = 0; i < h->size; i++) {
-
         node = h->content[i];
         if (node) {
             while (node) {
@@ -71,8 +71,10 @@ void clearHashTable(hashtable* h) {
                 node = node->next;
 
                 if (temp) {
+                    free(temp->key);
+                    temp->key = NULL;
+
                     free(temp);
-                    // free(temp->value);
                     temp = NULL;
                 }
             }
@@ -83,8 +85,10 @@ void clearHashTable(hashtable* h) {
         free(h->content);
         h->content = NULL;
 
+        free(h->iterator);
+        h->iterator = NULL;
+
         free(h);
-        if (h) h->size = 0;
         h = NULL;
     }
 }
@@ -136,7 +140,6 @@ int8_t ht_insert(hashtable *h, char *key, ht_value *value) {
 
     ht_entry *next = NULL, *previous = NULL;
 
-
     /* Calcula el hash para nuestra clave. */
     int pos;
     if ((pos = hash(h, key)) >= 0)
@@ -166,26 +169,46 @@ int8_t ht_insert(hashtable *h, char *key, ht_value *value) {
         ht_entry *node = ht_newnode(key, value);
         if (node) {
             node->next = next;
-            (previous != NULL) ? (previous->next = node) : (h->content[pos] = node);
-        } else
-            return HT_ERR;
+            if (previous != NULL) {
+                previous->next = node;
+            } else {
+                h->content[pos] = malloc(sizeof(node));
+                memcpy(h->content[pos], node, sizeof(*node));
+                free(node);
+            }
+        } else return HT_ERR;
     }
 
     return HT_OK;
 }
 
-int8_t ht_fill (hashtable *h, char *key, ht_value *value, ...) {
-    return HT_ERR;
+
+int8_t ht_fill (hashtable *h, ...) {
+
+    if (!h) return HTERR_BADPARAMS;
+
+    char *k;
+    ht_value *v;
+
+    va_list ap;
+    va_start(ap, h);
+
+    while ((k = va_arg(ap, char *)) && (v = va_arg(ap, ht_value *))) {
+        ht_insert(h, k, v);
+    }
+
+    va_end(ap);
+    return HT_OK;
 }
 
 
-static uint16_t hash(hashtable *h, char *key) {
+static uint16_t hash (hashtable *h, char *key) {
 
     if (!h || !key) return HTERR_BADPARAMS;
 
-    uint16_t hash = 7, i, len = strlen(key);
+    uint16_t hash = 7, i;
 
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < strlen(key); i++) {
         hash = hash * 31 + key[i];
     }
 
@@ -206,7 +229,7 @@ int8_t ht_keyexists (hashtable *h, char *key) {
         return pos;
 
 
-    /* Iterates through the linked list */
+    /* Iterates through the linked list. */
     while (entry && entry->key && strcmp(key, entry->key) > 0) {
         entry = entry->next;
     }
@@ -245,12 +268,12 @@ ht_entry *ht_iterate (hashtable *h) {
     if (h->iterator->current != NULL) {
         if (h->iterator->current->next != NULL) { // If the LL has a next node
             h->iterator->current = h->iterator->current->next; // then we advance the pointer a position and
-            // we return it.
+                                                                // we return it.
             return h->iterator->current;
         }
 
         h->iterator->index++; // In this case the LL hasn't anymore nodes,
-        // so we advance one position on the main array.
+                              // so we advance one position on the main array.
         h->iterator->current = h->content[h->iterator->index];
     }
 
@@ -275,18 +298,31 @@ int8_t ht_deletenode (hashtable *h, char *key) {
 
     if (!h || !key) return HTERR_BADPARAMS;
 
-    int i;
-    ht_entry *node;
-    for (i = 0; i < h->size; i++) {
-        node = h->content[i];
-        if (node) {
-            while (node) {
-                if (strcmp(node->key, key) == 0) {
-                    free(node);
-                    node = NULL;
-                    return 1;
-                } else node = node->next;
-            }
-        }
+    int pos;
+    pos = hash(h, key);
+
+    if (key < 0) {
+        return HTERR_CANTFINDKEY;
     }
+
+    ht_entry *node = h->content[pos];
+    void* base_ptr = node;
+
+    while (node) {
+        if (strcmp(node->key, key) == 0) {
+          
+            free(node->key);
+            node->key = NULL;
+          
+            /* If the key is in the main array, we free that as well. */
+            if (node == base_ptr) {
+                free(base_ptr);
+                h->content[pos] = NULL;
+            }
+
+            return 1;
+        } else node = node->next;
+    }
+
+    return HTERR_CANTFINDKEY;
 }

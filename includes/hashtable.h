@@ -1,19 +1,18 @@
 /**
- * @file hashtable.ch
- * @author Jorge Cifuentes <jorge.cifuentes95@gmail.com>
- * @date 18 mar 2016
+ * @file hashtable.h
+ * @author     Jorge Cifuentes <jorge.cifuentes95@gmail.com>
+ * @date       20 mar 2016
  *
- * @brief File containing hashtable library functions definition.
- * 
- * This hashtable consists of a fixed-size main array (of size ht->size),
- * and a linked list for every one of this main array positions.
- * The hashtable itself it's a matrix (a pointer to an array) of ht_entry, 
- * which is a combination of a key and a value, encapsulated on its own
- * struct so it can be changed easily.
- * 
- * The hashtable has as well a internal iterator, so it can be used to iterate trough
- * its elements.
+ * @brief      File containing hashtable library functions definition.
  *
+ *             This hashtable consists of a fixed-size main array (of size ht->
+ *             size), and a linked list for every one of this main array
+ *             positions. The hashtable itself it's a matrix (a pointer to an
+ *             array) of ht_entry, which is a combination of a key and a value,
+ *             encapsulated on its own struct so it can be changed easily.
+ *
+ *             The hashtable has as well a internal iterator, so it can be used
+ *             to iterate trough its elements.
  */
 
 #ifndef HASHTABLE_H
@@ -23,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 
 #define HT_OK 1
@@ -34,7 +34,7 @@
 #define HTERR_CANTFINDKEY -4
 
 
-struct table_val { // valor de los elementos en la tabla
+struct table_val {
 	int v;
 };  
 typedef struct table_val ht_value;
@@ -81,7 +81,7 @@ hashtable* ht_create (int8_t size);
  *
  * @param      h     Tabla a liberar.
  */
-void clearHashTable (hashtable* h);
+void ht_clear (hashtable *h);
 
 
 /**
@@ -105,6 +105,19 @@ ht_value *ht_getvalue (hashtable *h, char *key);
  * @return     HT_OK on success, a number lesser than 0 otherwise.
  */
 int8_t ht_insert (hashtable *h, char *key, ht_value *value);
+
+
+/**
+ * @brief      Fills the table with a variadic number of key-value params.
+ *
+ *             This functions uses variadic arguements, so it must be provided a
+ *             series of "char *key, ht_value *value" values.
+ *
+ * @param      h          Hash table.
+ *
+ * @return     HT_OK on success, a number lesser than 0 otherwise.
+ */
+int8_t ht_fill (hashtable *h, ...);
 
 
 /**
