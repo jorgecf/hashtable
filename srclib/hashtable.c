@@ -32,6 +32,11 @@ static ht_entry *ht_newnode(char *key, ht_value *value);
 static uint16_t hash(hashtable *h, char *key);
 
 
+static void ht_freenode(ht_entry *node);
+
+
+static void ht_copynode(ht_entry *dst, ht_entry *src);
+
 
 hashtable *ht_create(int8_t size) {
 
@@ -111,6 +116,20 @@ static ht_entry *ht_newnode(char *key, ht_value *value) {
 }
 
 
+static void ht_freenode(ht_entry *node) {
+    free(node->key);
+    free(node);
+}
+
+static void ht_copynode(ht_entry *dst, ht_entry *src) {
+
+    if (!dst || !src) return;
+
+    memcpy(dst, src, sizeof(*src));
+    dst->key = strdup (src->key); // memcpy does not duplicate the string, only the value of the ptr
+}
+
+
 ht_value *ht_getvalue(hashtable *h, char *key) {
 
     if (!h || !key) return NULL;
@@ -173,8 +192,8 @@ int8_t ht_insert(hashtable *h, char *key, ht_value *value) {
                 previous->next = node;
             } else {
                 h->content[pos] = malloc(sizeof(node));
-                memcpy(h->content[pos], node, sizeof(*node));
-                free(node);
+                ht_copynode(h->content[pos], node);
+                ht_freenode(node);
             }
         } else return HT_ERR;
     }
