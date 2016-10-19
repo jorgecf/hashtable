@@ -36,7 +36,7 @@
 
 struct table_val {
 	int v;
-};  
+};
 typedef struct table_val ht_value;
 
 
@@ -44,14 +44,14 @@ struct table_entry {
 	char *key;
 	ht_value *value;
 	struct table_entry *next;
-};  
+};
 typedef struct table_entry ht_entry;
 
 
 struct table_iterator {
 	int index;
 	ht_entry *current;
-};  
+};
 typedef struct table_iterator ht_iterator;
 
 
@@ -77,20 +77,20 @@ hashtable* ht_create (int8_t size);
 
 
 /**
- * @brief      Libera la memoria asociada a una tabla hash.
+ * @brief      Frees all the memory of the hash table.
  *
- * @param      h     Tabla a liberar.
+ * @param      h     Hash table.
  */
 void ht_clear (hashtable *h);
 
 
 /**
- * @brief      Devuelve el valor mapeado.
+ * @brief      Gets a mapped value to a key.
  *
- * @param      h     Tabla hash
- * @param      key   Clave
+ * @param      h     Hash table
+ * @param      key   Key
  *
- * @return     La direccion del value de key o NULL si no existe
+ * @return     Key or null otherwise
  */
 ht_value *ht_getvalue (hashtable *h, char *key);
 
@@ -110,7 +110,7 @@ int8_t ht_insert (hashtable *h, char *key, ht_value *value);
 /**
  * @brief      Fills the table with a variadic number of key-value params.
  *
- *             This functions uses variadic arguements, so it must be provided a
+ *             This functions uses variadic arguments, so it must be provided a
  *             series of "char *key, ht_value *value" values.
  *
  * @param      h          Hash table.
@@ -132,24 +132,23 @@ int8_t ht_keyexists (hashtable *h, char *key);
 
 
 /**
- * @brief      Borra un elemento de la tabla hash.
+ * @brief      Deletes an element from the hash table given its key.
  *
- * @param      h     Tabla hash
- * @param      key   Clave
+ * @param      h     Hash table
+ * @param      key   Key
  *
- * @return     { description_of_the_return_value }
+ * @return     HT_OK on success, HTERR_BADPARAMS or HTERR_CANTFINDKEY otherwise
  */
 int8_t ht_deletenode (hashtable *h, char *key);
 
 
 /**
- * @brief      Dada una tabla hash, devuelve su elemento valido siguiente (es
- *             decir, no nulo y no procesado aun). Hace uso del iterador interno
- *             de la tabla.
+ * @brief      Given a hash table, gets its next valid value (that is, not NULL
+ * 						 and not processed yet), useing its internal iterator.
  *
- * @param      h     Tabla hash
+ * @param      h     Hash table
  *
- * @return     El contenido de la tabla o NULL si no hay mas
+ * @return     The entry value or NULL if the iteration finished
  */
 ht_entry *ht_iterate (hashtable *h);
 

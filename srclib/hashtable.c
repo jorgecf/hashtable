@@ -27,14 +27,23 @@ static ht_entry *ht_newnode(char *key, ht_value *value);
  * @param      h     Hash table.
  * @param      key   Key.
  *
- * @return     El valor hash o -1 en caso de error
+ * @return     Hash value or -1 if an error occurred
  */
 static uint16_t hash(hashtable *h, char *key);
 
-
+/**
+ * @brief      Frees the memory of a node and its key.
+ *
+ * @param      node    Hashtable node
+ */
 static void ht_freenode(ht_entry *node);
 
-
+/**
+ * @brief      Replicate the value of one node into another.
+ *
+ * @param      dst    Hashtable node destiny
+ * @param      src    Hashtable node source
+ */
 static void ht_copynode(ht_entry *dst, ht_entry *src);
 
 
@@ -121,6 +130,7 @@ static void ht_freenode(ht_entry *node) {
     free(node);
 }
 
+
 static void ht_copynode(ht_entry *dst, ht_entry *src) {
 
     if (!dst || !src) return;
@@ -134,7 +144,6 @@ ht_value *ht_getvalue(hashtable *h, char *key) {
 
     if (!h || !key) return NULL;
 
-    /* Coge el par en la posicion asociada a la clave key. */
     int pos = hash(h, key);
     ht_entry *entry = NULL;
 
@@ -143,8 +152,7 @@ ht_value *ht_getvalue(hashtable *h, char *key) {
     else
         return NULL;
 
-
-    /* Recorre la linkedlist */
+    /* Iterates through the linked list */
     while (entry && entry->key && strcmp(key, entry->key) > 0) {
         entry = entry->next;
     }
@@ -159,32 +167,26 @@ int8_t ht_insert(hashtable *h, char *key, ht_value *value) {
 
     ht_entry *next = NULL, *previous = NULL;
 
-    /* Calcula el hash para nuestra clave. */
     int pos;
     if ((pos = hash(h, key)) >= 0)
         next = h->content[pos];
     else
         return pos;
 
-    /* Recorre la LinkedList de esa posicion de la tabla hash hasta situarse
-     * entre dos valores tal que se pueden ordenar de la siguiente manera:
-     * key(previous), key(nueva) y key(next).
-     * (El primer elemento de la lista sera el valor que devuelve hash()). */
+    /* Iterates the linkedlist of the corresponding hash value */
     while (next && next->key && strcmp(key, next->key) > 0) {
         previous = next;
         next = next->next;
     }
 
-    /* En este caso el elemento que iria detras del par nuevo, tiene la misma
-     * clave que ya queremos insertar, por lo que la insercion no se puede
-     * completar. */
+     /* If key already exists the insertion cannot be done */
     if (next && next->key && strcmp(key, next->key) == 0) {
         return HTERR_KEYALREADYEXISTS;
 
     } else {
-        /* En cualquier otro caso, creamos un nuevo par y lo colocamos entre
-         * previous y next. Si previous es null significa que lo colocamos en
-         * el inicio de la LinkedList. */
+         /* Otherwise, we create a new node and put it between previous and
+          * next. If previous is NULL, then the node will be the first of its
+          * linkedlist. */
         ht_entry *node = ht_newnode(key, value);
         if (node) {
             node->next = next;
@@ -329,17 +331,17 @@ int8_t ht_deletenode (hashtable *h, char *key) {
 
     while (node) {
         if (strcmp(node->key, key) == 0) {
-          
+
             free(node->key);
             node->key = NULL;
-          
+
             /* If the key is in the main array, we free that as well. */
             if (node == base_ptr) {
                 free(base_ptr);
                 h->content[pos] = NULL;
             }
 
-            return 1;
+            return HT_OK;
         } else node = node->next;
     }
 
