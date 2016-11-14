@@ -153,6 +153,12 @@ int8_t ht_deletenode (hashtable *h, char *key);
 ht_entry *ht_iterate (hashtable *h);
 
 
+/**
+ * @brief      Prints the hash table to a file descriptor.
+ *
+ * @param      f     File descriptor
+ * @param      h     Hash table
+ */
 void ht_print (FILE *f, hashtable *h);
 
 #endif	/* HASHTABLE_H */
